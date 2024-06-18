@@ -1,0 +1,47 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+tags: ["mnist", "simple_dense_net"]
+
+seed: 12345
+
+early_stopping:
+  patience: 1000 # number of checks with no improvement after which training will be stopped
+
+trainer:
+  accelerator: gpu
+  fast_dev_run: False
+  max_epochs: 500
+  limit_test_batches: 1.0
+
+hydra:
+  job:
+    name: "uci_naval"
+  run:
+    dir: ${paths.log_dir}/${task_name}/A_FULL_uci_naval_0.8train/_${now:%Y-%m-%d}_${now:%H-%M-%S}_${hydra:job.name}
+    
+data:
+  batch_size: 1024
+  hparams:
+    dataset_name: "naval-propulsion-plant"
+
+logger:
+  mlflow:
+    experiment_name: "FULL_uci_naval_0.8train"
+    run_name: ${hydra:job.name} 
+
+model:
+  input_dim: 16
+  output_dim: 1
+  hidden_layers: [50]
+  restrict_to_square: False
+
+  hparams:
+    learning_rate: 0.01
+    denormalize_predictions: True
+    h_optimization: True

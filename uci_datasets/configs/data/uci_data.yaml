@@ -1,0 +1,13 @@
+_target_: src.data.uci_datamodule.UCI_datamodule
+
+batch_size: 1024
+num_workers: 4
+hparams: 
+  dataset_name: None 
+  data_root: "/home/victorletzelter/workspace/research-project/toy-rmcl/data/uci"
+  train_ratio: 0.8
+  seed: 1
+  normalize_x: True
+  normalize_y: True
+  y_dim: 1
+  split_num: 0

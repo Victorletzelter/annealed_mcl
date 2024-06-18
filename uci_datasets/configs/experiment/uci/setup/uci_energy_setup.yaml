@@ -1,0 +1,43 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+tags: ["mnist", "simple_dense_net"]
+
+seed: 12345
+
+trainer:
+  accelerator: gpu
+  fast_dev_run: False
+  max_epochs: 20
+  limit_test_batches: 1.0
+
+hydra:
+  job:
+    name: "uci_energy"
+  run:
+    dir: ${paths.log_dir}/${task_name}/setup/_${now:%Y-%m-%d}_${now:%H-%M-%S}_${hydra:job.name}
+    
+data:
+  batch_size: 1024
+  hparams:
+    dataset_name: "energy"
+
+logger:
+  mlflow:
+    experiment_name: "setup"
+    run_name: ${hydra:job.name} 
+
+model:
+  input_dim: 14
+  output_dim: 1
+  hidden_layers: [50]
+
+  hparams:
+    learning_rate: 0.01
+    denormalize_predictions: True
+

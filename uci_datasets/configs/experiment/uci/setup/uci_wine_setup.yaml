@@ -1,0 +1,52 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+tags: ["mnist", "simple_dense_net"]
+
+seed: 12345
+
+trainer:
+  log_every_n_steps: 1
+  accelerator: gpu
+  fast_dev_run: False
+  max_epochs: 1
+  # max_epochs: 1
+  limit_test_batches: 1.0
+
+hydra:
+  job:
+    name: "uci_wine"
+  run:
+    # dir: ${paths.log_dir}/${task_name}/uci_wine-sanity/_${now:%Y-%m-%d}_${now:%H-%M-%S}_${hydra:job.name}
+    dir: ${paths.log_dir}/${task_name}/setup/_${now:%Y-%m-%d}_${now:%H-%M-%S}_${hydra:job.name}
+    
+data:
+  batch_size: 1024
+  # batch_size: 1
+  hparams:
+    dataset_name: "wine-quality-red"
+
+logger:
+  mlflow:
+    # experiment_name: "uci_wine"
+    experiment_name: "setup"
+    # experiment_name: "uci-sanity-check-wine-v2"
+    run_name: ${hydra:job.name} 
+
+model:
+  input_dim: 11
+  output_dim: 1
+  num_hypothesis: 1
+  hidden_layers: [50]
+  # scaling_factor: 0.15
+
+  hparams:
+    h_optimization: True
+    compute_mse: True
+    denormalize_predictions: False
+    check_nll_normalization: True

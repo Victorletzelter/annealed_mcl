@@ -1,0 +1,52 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+tags: ["mnist", "simple_dense_net"]
+
+seed: 12345
+
+trainer:
+  accelerator: gpu
+  fast_dev_run: False
+  limit_test_batches: 1.0
+  max_epochs: 50
+
+hydra:
+  job:
+    name: "uci_concrete"
+  run:
+    dir: ${paths.log_dir}/${task_name}/uci_concrete_hopt_scaled/_${now:%Y-%m-%d}_${now:%H-%M-%S}_${hydra:job.name}
+    
+data:
+  batch_size: 1024
+  # batch_size: 32
+  # batch_size: 1
+  hparams:
+    dataset_name: "concrete"
+
+logger:
+  mlflow:
+    experiment_name: "uci_concrete_hopt_scaled"
+    run_name: ${hydra:job.name} 
+
+model:
+  input_dim: 8
+  output_dim: 1
+  hidden_layers: [50]
+  num_hypothesis: 5
+  # log_var_pred: False
+
+  hparams:
+    learning_rate: 0.01
+    denormalize_predictions: True
+
+  # wandb:
+  #   tags: ${tags}
+  #   group: "mnist"
+  # aim:
+  #   experiment: "mnist"

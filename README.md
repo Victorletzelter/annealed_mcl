@@ -1,11 +1,37 @@
-# Source separation experiments with annealed Multiple Choice Learning (aMCL)
+# Official code of *Annealed Multiple Choice Learning*
 
-Source code for the source separation experiments in the paper **Annealed Multiple Choice Learning: Overcoming limitations of Winner-takes-all with deterministic annealing**.
+Source code for the source separation experiments in the paper **Annealed Multiple Choice Learning: Overcoming limitations of Winner-takes-all with annealing**.
 
 ## Structure of the repository
 
 ### Synthetic example 
 We propose a python notebook `synthetic_experiment.ipynb` with a toy example of the aMCL framework.
+
+### UCI Datasets
+
+For reproducing the results on the UCI datasets, first create a conda environment where you install the needed dependencies:
+
+```shell
+conda create -n uci_env
+conda activate uci_env
+pip install -r uci_datasets/requirements.txt
+```
+
+Then, define your absolute home path as environment variable
+
+```shell
+export MY_HOME=<YOUR_PATH>/annealed_mcl/uci_datasets 
+```
+
+The results can be reproduced by running the following scripts:
+
+```shell
+cd ${MY_HOME}/scripts_uci ;
+./1scripts_uci_train_and_eval_loop_protein.sh ;
+./1scripts_uci_train_and_eval_loop_year.sh ;
+./1scripts_uci_train_and_eval_loop.sh ;
+./2scripts_uci_extract_results.sh
+```
 
 ### Source separation 
 The code to train source separation models on the WSJ0-mix dataset is available in the `source_separation` repository. It is structured as follows:

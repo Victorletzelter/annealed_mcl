@@ -1,0 +1,37 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+seed: 12345
+
+trainer:
+  accelerator: gpu
+  fast_dev_run: True
+  max_epochs: 1
+  check_val_every_n_epoch: 1
+  # limit_train_batches: 1
+
+hydra:
+  job:
+    name: "setup"
+  run:
+    dir: ${paths.log_dir}/${task_name}/setup/_${now:%Y-%m-%d}_${now:%H-%M-%S}_${hydra:job.name}
+    
+data:
+  batch_size: 1024
+  hparams:
+    name: "single_gaussian-not-centered"
+
+logger:
+  mlflow:
+    experiment_name: "setup"
+    # experiment_name: "setup"
+    run_name: ${hydra:job.name} 
+
+model:
+  hparams:
+    training_wta_mode: "stable_awta"

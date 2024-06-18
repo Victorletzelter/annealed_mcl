@@ -1,0 +1,33 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=example
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+seed: 12345
+
+trainer:
+  accelerator: gpu
+  fast_dev_run: False
+  max_epochs: 51
+  check_val_every_n_epoch: 5
+  limit_train_batches: 1.0
+
+hydra:
+  job:
+    name: "three_gaussians"
+  run:
+    dir: ${paths.log_dir}/${task_name}/three_gaussians/_${now:%Y-%m-%d}_${now:%H-%M-%S}_${hydra:job.name}
+    
+data:
+  batch_size: 1024
+  hparams:
+    name: "three_gaussians"
+
+logger:
+  mlflow:
+    experiment_name: "three_gaussians"
+    # experiment_name: "setup"
+    run_name: ${hydra:job.name} 
