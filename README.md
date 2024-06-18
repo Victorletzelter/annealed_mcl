@@ -23,7 +23,9 @@ Then, define your absolute home path as environment variable
 export MY_HOME=<YOUR_PATH>/annealed_mcl/uci_datasets 
 ```
 
-The results can be reproduced by running the following scripts:
+The benchmark follows the experimental protocol of preivous works [A,B]. The UCI regression datasets can be downloaded in this [drive](https://drive.google.com/drive/folders/16L5Dy9qw3StCY4AvtP98KA5xDZrtcHV3?usp=drive_link) [C].
+
+Once the datasets are placed in the `uci_datasets/data/uci' folder, the results can be reproduced from the following commands. 
 
 ```shell
 cd ${MY_HOME}/scripts_uci ;
@@ -32,6 +34,13 @@ cd ${MY_HOME}/scripts_uci ;
 ./1scripts_uci_train_and_eval_loop.sh ;
 ./2scripts_uci_extract_results.sh
 ```
+
+[A] Hernandez-Lobato, J. M. and Adams, R. Probabilistic back-propagation for scalable learning of bayesian neural networks. In ICML, pp. 1861–1869. PMLR, 2015.
+
+[B] Lakshminarayanan, B., Pritzel, A., and Blundell, C. Simple and scalable predictive uncertainty estimation using deep
+ensembles. In NeurIPS, volume 30, 2017.
+
+[C] Han, X., Zheng, H., & Zhou, M. Card: Classification and regression diffusion models. In NeurIPS, volume 35, 2022. 
 
 ### Source separation 
 The code to train source separation models on the WSJ0-mix dataset is available in the `source_separation` repository. It is structured as follows:
