@@ -16,7 +16,7 @@ defaults:
 
   # experiment configs allow for version control of specific hyperparameters
   # e.g. best hyperparameters for given model and datamodule
-  - experiment: A_three_gaussians_2.yaml
+  - experiment: A_three_gaussians.yaml
   # - experiment: A_three_gaussians_changedist.yaml
 
   # config for hyperparameter optimization

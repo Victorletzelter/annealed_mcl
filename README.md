@@ -7,25 +7,47 @@ Source code for the source separation experiments in the paper **Annealed Multip
 ### Synthetic example 
 We propose a python notebook `synthetic_experiment.ipynb` with a toy example of the aMCL framework.
 
-### UCI Datasets
-
-For reproducing the results on the UCI datasets, first create a conda environment where you install the needed dependencies:
+The full pipeline to reproduce the results in the paper on the synthetic datasets in given in the `synthetic_and_uci_datasets` folder. For reproducing the results, first create and activate a conda environment with 
 
 ```shell
-conda create -n uci_env
-conda activate uci_env
-pip install -r uci_datasets/requirements.txt
+conda create -n synth_env
+conda activate synth_env
+pip install -r synthetic_and_uci_datasets/requirements.txt
 ```
 
 Then, define your absolute home path as environment variable
 
 ```shell
-export MY_HOME=<YOUR_PATH>/annealed_mcl/uci_datasets 
+export MY_HOME=<YOUR_PATH>/annealed_mcl/synthetic_and_uci_datasets
+```
+
+Then, the training to be performed for reproducing the Figures 1,2 and 4 of the main paper can be performed through the following commands:
+
+```shell
+cd ${MY_HOME}/scripts_sythetic ;
+./scripts_synthetic_train_three_gaussians.sh ; # For reproducing the results with the three fixed gaussians
+./scripts_synthetic_train_three_gaussians_changedist.sh ; # For reproducing the results with the three moving gaussians;
+```
+
+### UCI Datasets
+
+For reproducing the results on the UCI datasets, first create and activate a conda environment where you install the needed dependencies:
+
+```shell
+conda create -n uci_env
+conda activate uci_env
+pip install -r synthetic_and_uci_datasets/requirements.txt
+```
+
+Then, define your absolute home path as environment variable
+
+```shell
+export MY_HOME=<YOUR_PATH>/annealed_mcl/synthetic_and_uci_datasets
 ```
 
 The benchmark follows the experimental protocol of preivous works [A,B]. The UCI regression datasets can be downloaded in this [drive](https://drive.google.com/drive/folders/16L5Dy9qw3StCY4AvtP98KA5xDZrtcHV3?usp=drive_link) [C].
 
-Once the datasets are placed in the `uci_datasets/data/uci' folder, the results can be reproduced from the following commands. 
+Once the datasets are placed in the `synthetic_and_uci_datasets/data/uci' folder, the results can be reproduced from the following commands. 
 
 ```shell
 cd ${MY_HOME}/scripts_uci ;

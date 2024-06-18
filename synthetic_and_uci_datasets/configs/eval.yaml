@@ -11,9 +11,6 @@ defaults:
   - extras: default
   - hydra: default
 
-  # - experiment: setup.yaml
-  # - experiment: mixtures_uni_to_gaussians.yaml
-  # - experiment: uci/setup/uci_wine_setup.yaml
   - experiment: A_three_gaussians_changedist.yaml
 
 task_name: "eval"

@@ -170,8 +170,8 @@ setup.py
 /src/mlruns/
 configs/experiment/
 /.github/
-uci_datasets/logs/
-uci_datasets/data
-uci_datasets/src/mlruns
-uci_datasets/results_uci_annealing/
-uci_datasets/scripts_uci_annealing/
+synthetic_and_uci_datasets/logs/
+synthetic_and_uci_datasets/data
+synthetic_and_uci_datasets/src/mlruns
+synthetic_and_uci_datasets/results_uci_annealing/
+synthetic_and_uci_datasets/scripts_uci_annealing/
