@@ -45,10 +45,10 @@ cd ${MY_HOME}/scripts_sythetic ;
 Please find below two animations that compares WTA and aMCL training dynamics and that shows how aMCL overcomes the limitations of the Winner-takes-all:
 
 ![](images/sgd_wta.gif)
-* Winner-takes-all training dynamics with stochastic gradient descent (see Fig.1)*
+*Winner-takes-all training dynamics with stochastic gradient descent (see Fig.1)*
 
 ![](images/sgd_amcl.gif)
-* Annealed Multiple Choice Learning training dynamics with stochastic gradient descent (see Fig.1)*
+*Annealed Multiple Choice Learning training dynamics with stochastic gradient descent (see Fig.1)*
 
 ### UCI Datasets
 
