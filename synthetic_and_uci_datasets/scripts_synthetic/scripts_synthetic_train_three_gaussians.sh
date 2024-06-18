@@ -8,7 +8,7 @@ experiments=("three_gaussians")
 declare -a temperatures_ini=(0.6)
 cd ${MY_HOME}/src
 
-max_epochs=101
+max_epochs=1001
 training_epsilon=0.1
 hyps=("49 7 7")
 temperatures_decay=(0.99)

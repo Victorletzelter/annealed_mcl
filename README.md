@@ -2,7 +2,20 @@
 
 Source code for the source separation experiments in the paper **Annealed Multiple Choice Learning: Overcoming limitations of Winner-takes-all with annealing**.
 
-## Structure of the repository
+### Structure of the repository
+
+```
+.
+├── README.md
+├── synthetic_experiments.ipynb # Notebook for fast prototyping on the synthetic data experiments.
+└── synthetic_and_uci_datasets # Full pipeline for reproducing the results on the synthetic and UCI datasets.
+    └── ...
+└── source_separation # Full pipeline for reproducing the results on the source separation experiments. 
+    └── ...
+└── images # Folder with gifs and images
+    └── ...
+...
+```
 
 ### Synthetic example 
 We propose a python notebook `synthetic_experiment.ipynb` with a toy example of the aMCL framework.
@@ -28,6 +41,14 @@ cd ${MY_HOME}/scripts_sythetic ;
 ./scripts_synthetic_train_three_gaussians.sh ; # For reproducing the results with the three fixed gaussians
 ./scripts_synthetic_train_three_gaussians_changedist.sh ; # For reproducing the results with the three moving gaussians;
 ```
+
+Please find below two animations that compares WTA and aMCL training dynamics and that shows how aMCL overcomes the limitations of the Winner-takes-all:
+
+![](images/sgd_wta.gif)
+* Winner-takes-all training dynamics with stochastic gradient descent (see Fig.1)*
+
+![](images/sgd_amcl.gif)
+* Annealed Multiple Choice Learning training dynamics with stochastic gradient descent (see Fig.1)*
 
 ### UCI Datasets
 
