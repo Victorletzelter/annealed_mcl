@@ -1,6 +1,6 @@
-# Official code of *Annealed Multiple Choice Learning*
+# Official code of *Annealed Multiple Choice Learning* (NeurIPS 2024)
 
-Source code for the source separation experiments in the paper **Annealed Multiple Choice Learning: Overcoming limitations of Winner-takes-all with annealing**.
+Source code for the source separation experiments in the paper **Annealed Multiple Choice Learning: Overcoming limitations of Winner-takes-all with annealing** (NeurIPS 2024 Poster).
 
 ### Structure of the repository
 
