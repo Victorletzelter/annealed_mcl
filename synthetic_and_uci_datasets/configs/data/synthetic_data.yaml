@@ -7,23 +7,3 @@ hparams:
   n_samples_val: 25000
   shift_mode: False
   name: "single_gaussian"
-
-# 'uniform-to-single-gauss' 
-# 'single-uniform' 
-# 'single-gaussian' 
-# 'mixture-uni-to-gaussians' 
-# 'mixture-uni-to-uni' :
-# 'two-moons' 
-# 'rotating-two-moons' :
-# 'fixed-damier' :
-# 'changing-damier' :
-# 'swiss-roll' :
-# 'rotating-swiss-roll' :
-# 'gaussian-circle-mixture-translation' :
-# 'single-gaussian-not-centered' :
-# 'single-gaussian-sinusoidal' :
-# 'single-gaussian-imbalanced-sinusoidal' :
-# 'mixture-uni-to-gaussians-v2' :
-# 'diracs_rectangle_and_circle' :
-# "diracs_cross"
-# 'dirac_cercle_two_layers':

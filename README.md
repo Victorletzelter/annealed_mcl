@@ -137,3 +137,20 @@ scipy                     1.10.1
 torch                     1.13.1                   
 torchaudio                0.13.1                   
 ```
+
+### Contribution
+
+This code could be better organized and made more computationally efficient. Feel free to contribute to this repository or report any difficulties or bugs.
+
+### Citation
+
+If our work helped in your research, please consider citing us with the following bibtex code:
+
+```
+@article{amcl,
+  title={Annealed Multiple Choice Learning: Overcoming limitations of Winner-takes-all with annealing},
+  author={Perera, David and Letzelter, Victor and Mariotte, Th{\'e}o and Cort{\'e}s, Adrien and Chen, Mickael and Essid, Slim and Richard, Ga{\"e}l},
+  journal={arXiv preprint arXiv:2407.15580},
+  year={2024}
+}
+```

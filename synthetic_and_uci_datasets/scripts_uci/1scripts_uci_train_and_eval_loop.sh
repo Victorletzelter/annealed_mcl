@@ -1,5 +1,5 @@
 #!/bin/bash
-declare -a dataset_names=("concrete" "energy" "kin8nm" "naval" "power_plant" "wine" "yacht") # Add your dataset names here
+declare -a dataset_names=("yacht") # Add your dataset names here
 declare -a hyp_counts=(5)
 declare -a split_nums=(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19) # Add your split numbers here
 declare -a temperatures_ini=(0.5)

@@ -4,7 +4,7 @@ batch_size: 1024
 num_workers: 4
 hparams: 
   dataset_name: None 
-  data_root: "/home/victorletzelter/workspace/research-project/toy-rmcl/data/uci"
+  data_root: ${paths.root_dir}/data/uci
   train_ratio: 0.8
   seed: 1
   normalize_x: True
