@@ -159,6 +159,12 @@ class methodsLighting(LightningModule):
         )
             self.log_dict({"temperature": self.temperature})
 
+        elif "annealed_epsilon" in self.hparams and self.hparams["annealed_epsilon"] is True and "training_wta_mode" in self.hparams and "wta-relaxed" in self.hparams.training_wta_mode :
+            if "epsilon_ini" in self.hparams and self.hparams["epsilon_ini"] is not None :
+                self._hparams['training_epsilon'] = self.scheduler_epsilon(self.current_epoch)
+                self.hparams['training_epsilon'] = self.scheduler_epsilon(self.current_epoch)
+                self.log_dict({"epsilon": self.hparams['training_epsilon']})
+
         if 'plot_mode_training' in self.hparams and 'plot_training_frequency' in self.hparams : 
             if self.current_epoch%self.hparams['plot_training_frequency']==0 and self.hparams['plot_mode'] is True and (self.hparams['name'] == 'rmcl' or 'histogram' in self.hparams['name']) : 
                 # we check if the folder with plots exists
@@ -191,6 +197,19 @@ class methodsLighting(LightningModule):
             return self.hparams.temperature_ini - (self.hparams.temperature_ini) * epoch/self.trainer.max_epochs
         elif self.hparams.scheduler_mode == 'exponential' :
             return self.hparams.temperature_ini * self.hparams.temperature_decay**epoch
+        
+    def scheduler_epsilon(self,epoch) :
+        if self.hparams.scheduler_mode == 'linear' :
+                return self.hparams.epsilon_ini - (self.hparams.epsilon_ini) * epoch/self.trainer.max_epochs
+        elif self.hparams.scheduler_mode == 'warmup_linear' :
+            return self.hparams.epsilon_ini - (self.hparams.epsilon_ini) * 2* epoch/self.trainer.max_epochs
+        elif self.hparams.scheduler_mode == 'warmup_constant_linear' :
+            if epoch < 10 :
+                return self.hparams.epsilon_ini
+            else : 
+                return self.hparams.epsilon_ini - (self.hparams.epsilon_ini) * epoch/self.trainer.max_epochs
+        elif self.hparams.scheduler_mode == 'exponential' :
+            return self.hparams.epsilon_ini * self.hparams.epsilon_decay**epoch
 
     def on_train_epoch_end(self) -> None:
         "Lightning hook that is called when a training epoch ends."
