@@ -135,8 +135,17 @@ class methodsLighting(LightningModule):
             # set the temperature
             self.temperature = self.scheduler_temperature(self.current_epoch)
 
-            if self.temperature < 1e-10 :
-                self.temperature = 1e-10
+            if "temperature_lim" in self.hparams :
+                temperature_lim = self.hparams["temperature_lim"]
+            else:
+                temperature_lim = 1e-10
+
+            if self.temperature < temperature_lim :
+                if 'wta_after_temperature_lim' in self.hparams and self.hparams['wta_after_temperature_lim'] is True :
+                    self._hparams["training_wta_mode"] = 'wta'
+                    self.hparams["training_wta_mode"] = 'wta'
+                else :
+                    self.temperature = temperature_lim
 
             # update the loss
             self.loss = mhconfloss(

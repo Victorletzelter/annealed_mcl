@@ -23,7 +23,12 @@ We propose a python notebook `synthetic_experiment.ipynb` with a toy example of 
 The full pipeline to reproduce the results in the paper on the synthetic datasets in given in the `synthetic_and_uci_datasets` folder. For reproducing the results, first create and activate a conda environment with 
 
 ```shell
-conda create -n synth_env
+conda create -n synth_env -y python=3.9.20
+conda init
+```
+
+Then, re-launch the shell and run:
+```shell
 conda activate synth_env
 pip install -r synthetic_and_uci_datasets/requirements.txt
 ```
@@ -34,13 +39,15 @@ Then, define your absolute home path as environment variable
 export MY_HOME=<YOUR_PATH>/annealed_mcl/synthetic_and_uci_datasets
 ```
 
-Then, the training to be performed for reproducing the Figures 1,2 and 4 of the main paper can be performed through the following commands:
+Then, the training to be performed for reproducing the Figures 1, 2 and 4 of the main paper can be performed through the following commands:
 
 ```shell
-cd ${MY_HOME}/scripts_sythetic ;
-./scripts_synthetic_train_three_gaussians.sh ; # For reproducing the results with the three fixed gaussians
-./scripts_synthetic_train_three_gaussians_changedist.sh ; # For reproducing the results with the three moving gaussians;
+cd ${MY_HOME}/scripts_synthetic ;
+./scripts_synthetic_train_three_gaussians_fast.sh ; # Run this to reproduce results with three fixed Gaussians
+./scripts_synthetic_train_three_gaussians_changedist_fast.sh ; # Run this to reproduce results with three moving Gaussians
 ```
+
+The _fast suffix enables faster training than the original paper's setup, with visually similar plots. Remove _fast to train with the exact setup as described in the paper.
 
 Please find below two animations that compares WTA and aMCL training dynamics and that shows how aMCL overcomes the limitations of the Winner-takes-all:
 
@@ -55,7 +62,13 @@ Please find below two animations that compares WTA and aMCL training dynamics an
 For reproducing the results on the UCI datasets, first create and activate a conda environment where you install the needed dependencies:
 
 ```shell
-conda create -n uci_env
+conda create -n uci_env -y -python=3.9.20
+conda init
+```
+
+Then, after reloading the shell:
+
+```shell
 conda activate uci_env
 pip install -r synthetic_and_uci_datasets/requirements.txt
 ```

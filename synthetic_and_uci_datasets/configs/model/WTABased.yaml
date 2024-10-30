@@ -1,13 +1,10 @@
 _target_: src.models.Rmcl.Rmcl
 
-scaling_factor: 1
 num_hypothesis: 20
-closed_form_vol: True
 restrict_to_square: True
 hidden_layers: [256, 256]
 input_dim: 1
 output_dim: 2
-square_size: 5
 
 hparams:
   # training loss params
@@ -51,5 +48,12 @@ hparams:
   temperature_ini: 1.0
   scheduler_mode: "linear"
   temperature_decay: 0.9
+
+  temperature_lim: None
+  wta_after_temperature_lim: False
+
+  annealed_epsilon: False
+  epsilon_ini: None
+  epsilon_decay: None
 
   compute_risk_val: True
