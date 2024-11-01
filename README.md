@@ -150,7 +150,7 @@ If our work helped in your research, please consider citing us with the followin
 @article{amcl,
   title={Annealed Multiple Choice Learning: Overcoming limitations of Winner-takes-all with annealing},
   author={Perera, David and Letzelter, Victor and Mariotte, Th{\'e}o and Cort{\'e}s, Adrien and Chen, Mickael and Essid, Slim and Richard, Ga{\"e}l},
-  journal={arXiv preprint arXiv:2407.15580},
+  journal={Advances in neural information processing systems},
   year={2024}
 }
 ```
