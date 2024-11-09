@@ -137,12 +137,9 @@ class Rmcl(methodsLighting):
     def loss(self):
         return mhconfloss(
             mode=self._hparams["training_wta_mode"],
-            top_n=self._hparams["training_top_n"],
             epsilon=self._hparams["training_epsilon"],
             distance=self._hparams["training_distance"],
             conf_weight=self._hparams["training_conf_weight"],
-            rejection_method=self._hparams["training_rejection_method"],
-            number_unconfident=self._hparams["training_number_unconfident"],
             output_dim=self.output_dim,
             temperature=self.temperature,
         )

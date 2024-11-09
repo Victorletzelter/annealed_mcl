@@ -1,5 +1,5 @@
 from lightning import LightningDataModule
-from uci_dataset import UCI_Dataset
+from .uci_dataset import UCI_Dataset
 from torch.utils.data import DataLoader
 
 class UCI_datamodule(LightningDataModule):

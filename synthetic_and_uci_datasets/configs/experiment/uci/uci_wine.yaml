@@ -49,4 +49,3 @@ model:
   hparams:
     learning_rate: 0.01
     denormalize_predictions: True
-    h_optimization: True

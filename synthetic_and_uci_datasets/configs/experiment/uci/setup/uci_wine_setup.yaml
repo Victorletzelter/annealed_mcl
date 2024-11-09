@@ -43,10 +43,7 @@ model:
   output_dim: 1
   num_hypothesis: 1
   hidden_layers: [50]
-  # scaling_factor: 0.15
 
-  hparams:
-    h_optimization: True
+  hparams: 
     compute_mse: True
     denormalize_predictions: False
-    check_nll_normalization: True

@@ -17,7 +17,7 @@ from scipy.spatial import Voronoi, ConvexHull
 from torch.utils.data import DataLoader
 from scipy.spatial import Voronoi, voronoi_plot_2d, ConvexHull
 
-plt.rcParams['text.usetex'] = True
+plt.rcParams['text.usetex'] = False
 
 def forward_single_sample_adapted(model, test_loader, device='cpu', gauss_output=False):
     """Function for performing a forward pass with model on a single sample from test_loader."""
@@ -281,31 +281,4 @@ def generate_plot_adapted(
     if save_mode is True:
         plt.savefig(os.path.join(path_plot, plot_title + ".png"))
         plt.close()
-
-def gss(f, a, b, tol=1e-5):
-    """Golden-section search
-    to find the minimum of f on [a,b]
-    f: a strictly unimodal function on [a,b]
-    Ref: https://en.wikipedia.org/wiki/Golden-section_search
-
-    Example:
-    >>> f = lambda x: (x-2)**2
-    >>> x = gss(f, 1, 5)
-    >>> print("%.15f" % x)
-    2.000009644875678
-    """
-
-    gr = (math.sqrt(5) + 1) / 2
-    # it = 0
-
-    while abs(b - a) > tol:
-        # print(it)
-        c = b - (b - a) / gr
-        d = a + (b - a) / gr
-        if f(c) < f(d):  # f(c) > f(d) to find the maximum
-            b = d
-        else:
-            a = c
-
-    return (b + a) / 2
 

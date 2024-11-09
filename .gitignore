@@ -170,9 +170,13 @@ setup.py
 /src/mlruns/
 configs/experiment/
 /.github/
+synthetic_and_uci_datasets/configs/experiment/uci/setup
 synthetic_and_uci_datasets/logs/
 synthetic_and_uci_datasets/data
 synthetic_and_uci_datasets/src/mlruns
 synthetic_and_uci_datasets/results_uci_annealing/
 synthetic_and_uci_datasets/scripts_uci_annealing/
+
+images/three_gaussians_model_Rmcl_49_hyps
+images/three_gaussians_model_Rmcl_49_hyps_annealed_exp_0.6_0.99_decay
 

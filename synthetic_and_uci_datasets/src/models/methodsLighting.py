@@ -6,7 +6,7 @@ import numpy as np
 from src.utils.losses import mhloss, mhconfloss
 
 from src.utils.eval_utils import (
-    generate_plot_adapted, gss
+    generate_plot_adapted
 )
 import os
 
@@ -149,9 +149,7 @@ class methodsLighting(LightningModule):
 
             # update the loss
             self.loss = mhconfloss(
-            number_unconfident=self._hparams["training_number_unconfident"],
             mode=self._hparams["training_wta_mode"],
-            rejection_method=self._hparams["training_rejection_method"],
             epsilon=self._hparams["training_epsilon"],
             output_dim=self.output_dim,
             temperature=self.temperature,
@@ -237,9 +235,7 @@ class methodsLighting(LightningModule):
         "Lightning hook that is called when a validation epoch starts."
         if "training_wta_mode" in self.hparams and "awta" in self.hparams.training_wta_mode :
             self.loss = mhconfloss(
-            number_unconfident=self._hparams["training_number_unconfident"],
             mode='wta',
-            rejection_method=self._hparams["training_rejection_method"],
             epsilon=self._hparams["training_epsilon"],
             output_dim=self.output_dim,
             temperature=self.temperature,
@@ -361,68 +357,3 @@ class methodsLighting(LightningModule):
             save_mode=True,
             device='cpu',
             plot_title=self.hparams['name']+'_preds')
-            
-    def on_fit_end(self) :
-
-        if self.hparams.name != "gauss_mix" and 'h_optimization' in self.hparams and self.hparams['h_optimization'] is True :
-
-            # Disable the logger temporarily
-            original_loggers = self.trainer.logger
-            original_compute_risk = self.hparams.compute_risk
-            original_compute_mse = self.hparams.compute_mse
-
-            if 'batch_size_h_opt' in self.hparams :
-                original_batch_size = self.trainer.datamodule.hparams['batch_size']
-                self.trainer.datamodule.hparams['batch_size'] = self.hparams.batch_size_h_opt
-
-            if 'limit_val_batches_h_opt' in self.hparams :
-                original_limit_test_batches = self.trainer.limit_test_batches
-                self.trainer.limit_test_batches = self.hparams.limit_val_batches_h_opt
-            
-            self.trainer.logger = None
-            self.hparams.compute_risk = False
-            self.hparams.compute_mse = False
-
-            def f(h) :
-                self.scaling_factor = h
-                dic_metrics = self.trainer.test(model=self, dataloaders=self.trainer.datamodule.val_dataloader(),verbose=False)
-                return dic_metrics[0]['test_nll']
-            
-            if 'h_min' in self.hparams :
-                h_min = self.hparams.h_min
-            else :
-                h_min = 0.1
-                
-            if 'denormalize_predictions' in self.hparams and self.hparams['denormalize_predictions'] is True :
-                h_max = np.sqrt(self.trainer.datamodule.uci_dataset_train.scaler_y.var_[0])
-            elif 'h_max' in self.hparams :
-                h_max = self.hparams.h_max
-            else :
-                h_max = 2
-
-            if 'h_tol' in self.hparams :
-                h_tol = self.hparams.h_tol
-                log.info('Using h_tol {} from hparams'.format(h_tol))
-            else: 
-                h_tol = 1e-1
-
-            h_opt, f_hopt = gss(f, h_min, h_max, tol=h_tol)
-
-            self.scaling_factor = h_opt
-            log.info('Optimal scaling factor found: {}, with val nll {} and h_max {}'.format(np.round(self.scaling_factor,2),np.round(f_hopt,2),np.round(h_max,2)))
-
-            # Restore the original attributes
-            self.trainer.logger = original_loggers
-            self.hparams.compute_risk = original_compute_risk
-            self.hparams.compute_mse = original_compute_mse
-            self.mse_accumulator = 0
-            self.rmse_accumulator = 0
-            self.n_samples_mse = 0
-            self.nll_accumulator = 0
-            self.n_samples_nll = 0
-
-            if 'limit_val_batches_h_opt' in self.hparams :
-                self.trainer.limit_test_batches = original_limit_test_batches
-
-            if 'batch_size_h_opt' in self.hparams :
-                self.trainer.datamodule.hparams['batch_size'] = original_batch_size
