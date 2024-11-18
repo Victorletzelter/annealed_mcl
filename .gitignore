@@ -180,3 +180,5 @@ synthetic_and_uci_datasets/scripts_uci_annealing/
 images/three_gaussians_model_Rmcl_49_hyps
 images/three_gaussians_model_Rmcl_49_hyps_annealed_exp_0.6_0.99_decay
 
+amcl.gif
+mcl.gif

@@ -18,7 +18,7 @@ Source code for the source separation experiments in the paper **Annealed Multip
 ```
 
 ### Synthetic example 
-We propose a python notebook `synthetic_experiment.ipynb` with a toy example of the aMCL framework.
+We propose a python notebook `synthetic_experiment.ipynb` with a toy example of the aMCL framework for fast prototyping.
 
 The full pipeline to reproduce the results in the paper on the synthetic datasets in given in the `synthetic_and_uci_datasets` folder. For reproducing the results, first create and activate a conda environment with 
 
