@@ -182,3 +182,7 @@ images/three_gaussians_model_Rmcl_49_hyps_annealed_exp_0.6_0.99_decay
 
 amcl.gif
 mcl.gif
+
+cluster_scripts.sh
+synthetic_and_uci_datasets/scripts_uci_copy/
+synthetic_and_uci_datasets/scripts_uci_copy_2/

@@ -11,7 +11,7 @@ tags: ["mnist", "simple_dense_net"]
 seed: 12345
 
 early_stopping:
-  patience: 1000 # number of checks with no improvement after which training will be stopped
+  patience: 100 # number of checks with no improvement after which training will be stopped
 
 trainer:
   accelerator: gpu

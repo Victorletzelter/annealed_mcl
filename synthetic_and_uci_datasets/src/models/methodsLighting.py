@@ -56,7 +56,6 @@ class methodsLighting(LightningModule):
         if self.hparams['compute_mse'] is True :
             self.mse_accumulator = 0
             self.n_samples_mse = 0
-            self.rmse_accumulator = 0
 
     def loss(self) -> torch.Tensor:
         """Compute the loss function.
@@ -280,7 +279,6 @@ class methodsLighting(LightningModule):
             predictions_mse = self.prepare_predictions_mse(predictions=preds)
             mse, rmse = self.compute_mse(predictions=predictions_mse, targets=targets)
             self.mse_accumulator += mse*batch[0].shape[0]
-            self.rmse_accumulator += (rmse)*batch[0].shape[0]
             self.n_samples_mse += batch[0].shape[0]
         else : 
             mse = torch.tensor(float("nan"))
@@ -288,7 +286,6 @@ class methodsLighting(LightningModule):
         output = {
             "test_loss": loss,
             "test_risk": risk,
-            "test_mse": mse,
         }
 
         self.log_dict(output)
@@ -322,10 +319,6 @@ class methodsLighting(LightningModule):
 
             self.log_dict({"test_accumulated_rmse": rmse})
 
-            instance_based_rmse = self.rmse_accumulator / self.n_samples_mse
-
-            self.log_dict({"test_instance_based_rmse": instance_based_rmse})
-
         if 'plot_mode' in self.hparams :
             plot_mode = self.hparams['plot_mode']
         else : 
@@ -333,7 +326,7 @@ class methodsLighting(LightningModule):
         if 'dataset_name' in self.trainer.datamodule._hparams :
             plot_mode=False
 
-        if plot_mode is True and (self.hparams['name'] == 'rmcl' or 'histogram' in self.hparams['name']) : 
+        if plot_mode is True and self.hparams['name'] == 'rmcl' : 
             generate_plot_adapted(self, dataset_ms = self.trainer.datamodule.dataset_ms_class, 
             dataset_ss = self.trainer.datamodule.dataset_ss_class,
             path_plot = self.trainer.default_root_dir,
@@ -341,19 +334,6 @@ class methodsLighting(LightningModule):
             list_x_values=[0.01,0.6,0.9],
             n_samples_gt_dist=3000,
             num_hypothesis=self.num_hypothesis,
-            save_mode=True,
-            device='cpu',
-            plot_title=self.hparams['name']+'_preds')
-
-        if plot_mode is True and self.hparams['name'] == 'gauss_mix' : 
-            generate_plot_adapted(self, dataset_ms = self.trainer.datamodule.dataset_ms_class, 
-            dataset_ss = self.trainer.datamodule.dataset_ss_class,
-            path_plot = self.trainer.default_root_dir,
-            model_type='MDN',
-            list_x_values=[0.1,0.6,0.9],
-            n_samples_gt_dist=3000,
-            num_hypothesis=self.num_hypothesis,
-            log_var_pred=self.log_var_pred,
             save_mode=True,
             device='cpu',
             plot_title=self.hparams['name']+'_preds')

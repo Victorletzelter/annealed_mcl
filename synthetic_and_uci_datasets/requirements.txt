@@ -10,16 +10,18 @@ hydra-colorlog==1.2.0
 hydra-optuna-sweeper==1.2.0
 
 # --------- loggers --------- #
-wandb
-neptune-client
-mlflow
-comet-ml
+wandb==0.19.1
+neptune-client==1.13.0
+mlflow==2.19.0
+comet-ml==3.47.5
 aim>=3.16.2  # no lower than 3.16.2, see https://github.com/aimhubio/aim/issues/2550
 
 # --------- others --------- #
-rootutils       # standardizing the project root setup
-pre-commit      # hooks for applying linters on commit
-rich            # beautiful text formatting in terminal
-pytest          # tests
-seaborn
+rootutils==1.0.7       # standardizing the project root setup
+pre-commit==4.0.1      # hooks for applying linters on commit
+rich==13.9.4            # beautiful text formatting in terminal
+pytest==8.3.4          # tests
+seaborn==0.13.2
+IPython==8.18.1
+tensorboard==2.18.0
 # sh            # for running bash commands in some tests (linux/macos only)
