@@ -9,8 +9,6 @@ from datetime import datetime
 import rootutils
 rootutils.setup_root(__file__, indicator=".project-root", pythonpath=True)
 
-MY_HOME = os.getenv("PROJECT_ROOT")
-
 # Parse arguments from the command line
 parser = argparse.ArgumentParser(
     description="Extract experiment runs into a DataFrame."
@@ -39,13 +37,13 @@ parser.add_argument(
 parser.add_argument(
     "--save_dir",
     type=str,
-    default=f"{os.getenv('PROJECT_ROOT')}/synthetic_and_uci_datasets/results/saved_csv",
+    default=f"{os.getenv('PROJECT_ROOT')}/synthetic_and_uci_datasets/results/saved_csv_eval",
     help="Directory to save the CSV file.",
 )
 args = parser.parse_args()
 
 # Correctly set the tracking URI
-mlflow.set_tracking_uri(f"file://{os.getenv('PROJECT_ROOT')}/synthetic_and_uci_datasets/logs/mlflow/mlruns")
+mlflow.set_tracking_uri(f"file:/{os.getenv('PROJECT_ROOT')}/synthetic_and_uci_datasets/logs/mlflow/mlruns")
 
 # Initialize the MLflow client
 client = MlflowClient()
@@ -108,11 +106,11 @@ def extract_dataframe(
 
     # We check if the experiment is already saved
     if override_saved is False:
-        for file in os.listdir(f"{os.getenv('PROJECT_ROOT')}/synthetic_and_uci_datasets/results/saved_csv"):
+        for file in os.listdir(f"{os.getenv('PROJECT_ROOT')}/synthetic_and_uci_datasets/results/saved_csv_eval"):
             if file == "{}_id_{}.csv".format(experiment_name, exp_id):
                 print("The experiment is already saved")
                 return pd.read_csv(
-                    f"{os.getenv('PROJECT_ROOT')}/synthetic_and_uci_datasets/results/saved_csv/{experiment_name}_id_{exp_id}.csv"
+                    f"{os.getenv('PROJECT_ROOT')}/synthetic_and_uci_datasets/results/saved_csv_eval/{experiment_name}_id_{exp_id}.csv"
                 )
 
     runs = client.search_runs(experiment_ids=[exp_id])

@@ -96,6 +96,23 @@ export MY_HOME=<YOUR_PATH>/annealed_mcl/synthetic_and_uci_datasets
 
 The benchmark follows the experimental protocol of previous works [A,B].
 
+**Evaluation pipeline**:
+
+- Download checkpoints from this [drive](https://drive.google.com/file/d/1eH9yV5Lex_vKJzaEOQx-mf_UGTcGLTNx/view?usp=drive_link).
+- Place the checkpoints folder (named `checkpoints_uci_amcl`) in the synthetic_and_uci_datasets/ folder.
+- Run the python scriptin  `synthetic_and_uci_datasets/scripts_uci_eval/extract_ckpt_json.py` to extract the checkpoints paths in a json file with ```python synthetic_and_uci_datasets/scripts_uci_eval/extract_ckpt_json.py```
+- Run the following commands to train and evaluate the models:
+```shell
+cd ${MY_HOME}/scripts_uci_eval ;
+./1scripts_uci_train_and_eval_loop_protein.sh ;
+./1scripts_uci_train_and_eval_loop_year.sh ;
+./1scripts_uci_train_and_eval_loop.sh ;
+./2scripts_uci_extract_results.sh
+```
+
+**Training pipeline**:
+
+- To train the models, run the following commands:
 ```shell
 cd ${MY_HOME}/scripts_uci ;
 ./1scripts_uci_train_and_eval_loop_protein.sh ;
@@ -104,7 +121,7 @@ cd ${MY_HOME}/scripts_uci ;
 ./2scripts_uci_extract_results.sh
 ```
 
-Note that the results of the MCL baseline should match those presented in [D]. Checkpoints of the models associated with the results presented in the paper are also provided in this [drive](https://drive.google.com/file/d/1eH9yV5Lex_vKJzaEOQx-mf_UGTcGLTNx/view?usp=drive_link).
+Note that the results of the MCL baseline should match those presented in [D].
 
 [A] Hernandez-Lobato, J. M. and Adams, R. Probabilistic back-propagation for scalable learning of bayesian neural networks. In ICML, pp. 1861–1869. PMLR, 2015.
 

@@ -3,7 +3,7 @@ from lightning import LightningModule
 import torch.optim as optim
 import torch
 import numpy as np
-from src.utils.losses import mhloss, mhconfloss
+from src.utils.losses import WTALoss
 
 from src.utils.eval_utils import (
     generate_plot_adapted
@@ -39,7 +39,6 @@ class methodsLighting(LightningModule):
 
     def configure_optimizers(self):
     # Define and configure optimizers and LR schedulers.
-
     """
 
     def __init__(
@@ -147,7 +146,7 @@ class methodsLighting(LightningModule):
                     self.temperature = temperature_lim
 
             # update the loss
-            self.loss = mhconfloss(
+            self.loss = WTALoss(
             mode=self._hparams["training_wta_mode"],
             epsilon=self._hparams["training_epsilon"],
             output_dim=self.output_dim,
@@ -177,7 +176,6 @@ class methodsLighting(LightningModule):
                 generate_plot_adapted(self, dataset_ms = self.trainer.datamodule.dataset_ms_class, 
                 dataset_ss = self.trainer.datamodule.dataset_ss_class,
                 path_plot = os.path.join(self.trainer.default_root_dir, 'plots'),
-                model_type='rMCL',
                 list_x_values=[0.1,0.6,0.9],
                 n_samples_gt_dist=3000,
                 num_hypothesis=self.num_hypothesis,
@@ -233,7 +231,7 @@ class methodsLighting(LightningModule):
     def on_validation_epoch_start(self) -> None:
         "Lightning hook that is called when a validation epoch starts."
         if "training_wta_mode" in self.hparams and "awta" in self.hparams.training_wta_mode :
-            self.loss = mhconfloss(
+            self.loss = WTALoss(
             mode='wta',
             epsilon=self._hparams["training_epsilon"],
             output_dim=self.output_dim,
@@ -302,12 +300,24 @@ class methodsLighting(LightningModule):
 
     def compute_risk(self, predictions, targets):
 
-        predictions = (predictions[0], None)
-        # Compute the risk
-        return mhloss(
-            distance="euclidean-squared",
-            output_dim=self.output_dim,
-        )(predictions=predictions, targets=targets)
+        predictions = predictions[0] # Confidences are not used here.
+
+        # predictions of shape [batch, num_hypothesis, output_dim]
+        # targets[0]: data_target_position of shape [batch, Max_sources, output_dim]
+        # targets[1]: data_source_activity_target of shape [batch, Max_sources, 1]
+        # Assumes one target is active here.
+        targets = targets[0][:, 0, :] # shape [batch, output_dim]
+
+        # Expand the targets to match the shape of the predictions
+        targets = targets.unsqueeze(1).repeat(1, self.num_hypothesis, 1) # shape [batch, num_hypothesis, output_dim]
+
+        # Compute the squared difference
+        square_diff = (predictions - targets) ** 2 # shape [batch, num_hypothesis, output_dim]
+        # Sum over the output dimension
+        square_diff = square_diff.sum(dim=-1) # shape [batch, num_hypothesis]
+        # Take the min over the hypothesis dimension
+        risk = square_diff.min(dim=1).values # shape [batch]
+        return risk.mean()
 
     def on_test_epoch_end(self) -> None:
         """Lightning hook that is called when a test epoch ends."""
@@ -330,7 +340,6 @@ class methodsLighting(LightningModule):
             generate_plot_adapted(self, dataset_ms = self.trainer.datamodule.dataset_ms_class, 
             dataset_ss = self.trainer.datamodule.dataset_ss_class,
             path_plot = self.trainer.default_root_dir,
-            model_type='rMCL',
             list_x_values=[0.01,0.6,0.9],
             n_samples_gt_dist=3000,
             num_hypothesis=self.num_hypothesis,

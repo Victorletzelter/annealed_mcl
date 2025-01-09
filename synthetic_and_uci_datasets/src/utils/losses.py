@@ -2,162 +2,8 @@
 import torch
 from torch.nn.modules.loss import _Loss
 
-class mhloss(_Loss):
-    """Class for multi-hypothesis (i.e., Winner-Takes-Loss variants) losses.
-    """
-
-    def __init__(self,            
-                 reduction='mean',
-                 mode = 'wta',
-                 distance = 'euclidean-squared',
-                 epsilon=0.05,
-                 single_target_loss=False,
-                 output_dim=None) -> None:
-        """Constructor for the multi-hypothesis loss.
-
-        Args:
-            reduction (str, optional): Type of reduction performed. Defaults to 'mean'.
-            mode (str, optional): Winner-takes-all variant ('wta', 'wta-relaxed', 'wta-top-n') to choose. Defaults to 'wta'.
-            distance (str, optional): Underlying distance to use for the WTA computation. Defaults to 'euclidean'.
-            epsilon (float, optional):  Value of epsilon when applying the wta-relaxed variant. Defaults to 0.05.
-            single_target_loss (bool, optional): Whether to perform single target update (used in ensemble_mode). Defaults to False.
-        """
-        super(mhloss, self).__init__(reduction)
-
-        assert output_dim != None, "The output dimension must be defined"
-
-        self.mode = mode
-        self.distance = distance
-        self.epsilon = epsilon
-        self.single_target_loss = single_target_loss
-        self.output_dim = output_dim
-    
-    def forward(self,
-                predictions: torch.Tensor,
-                targets: torch.Tensor) :
-        """Forward pass for the multi-hypothesis loss. 
-
-        Args:
-            predictions (torch.Tensor): Tensor of shape [batchxself.num_hypothesisxoutput_dim]
-            targets (torch.Tensor,torch.Tensor): Tuple of shape [batch,Max_sources],[batch,Max_sources,output_dim], where Max_sources is the maximum number of targets for each input.
-
-        Returns:
-            loss (torch.tensor)
-        """
-
-        if len(predictions) >= 1 :
-            hyps_pred_stacked = predictions[0]
-
-        # hyps_pred_stacked,_ = predictions #Shape [batchxself.num_hypothesisxoutput_dim]
-        target_position, source_activity_target = targets #Shape [batch,Max_sources,output_dim],[batch,Max_sources,1]
-
-        losses = torch.tensor(0.)
-                
-        source_activity_target = source_activity_target[:,:].detach()
-        target_position =target_position[:,:,:].detach()
-        
-        loss=self.sampling_loss_ambiguous_gts(hyps_pred_stacked=hyps_pred_stacked, 
-                                                            source_activity_target=source_activity_target, 
-                                                            target_position=target_position, 
-                                                            mode=self.mode,
-                                                            distance=self.distance,
-                                                            epsilon=self.epsilon,
-                                                            single_target_loss=self.single_target_loss)
-        losses = torch.add(losses,loss)
-
-        return losses
-    
-    def sampling_loss_ambiguous_gts(self, hyps_pred_stacked, source_activity_target, target_position, mode='wta', distance='euclidean', epsilon=0.05, single_target_loss = False):
-        """Winner takes all loss computation and its variants.
-
-        Args:
-            hyps_pred_stacked (torch.tensor): Input tensor of shape (batch,num_hyps,2)
-            source_activity_target torch.tensor): Input tensor of shape (batch,Max_sources)
-            target_position (torch.tensor): Input tensor of shape (batch,Max_sources,output_dim)
-            mode (str, optional): Variant of the classical WTA chosen. Defaults to 'wta'.
-            distance (str, optional): Underlying distance to use. Defaults to 'euclidean'.
-
-        Returns:
-            loss (torch.tensor)
-        """
-        
-        filling_value = 1000 #Large number (on purpose) ; computational trick to ignore the "inactive targets".  
-        # whenever the sources are not active, as the source_activity is not to be deduced by the model is these settings. 
-        num_hyps = hyps_pred_stacked.shape[1]
-        batch = source_activity_target.shape[0]
-        Max_sources = source_activity_target.shape[1]
-        
-        #1st padding related to the inactive sources, not considered in the error calculation (with high error values)
-        mask_inactive_sources = source_activity_target == 0
-        mask_inactive_sources = mask_inactive_sources.expand_as(target_position)
-        target_position[mask_inactive_sources] = filling_value #Shape [batch,Max_sources,output_dim]
-        
-        #We can check whether the operation is performed correctly
-        # assert (source_activity_target.sum(axis=1).all()==(target_position[:,:,0]!=filling_value).sum(axis=1).all())
-        # assert (source_activity_target.sum(axis=1).all()==(target_position[:,:,1]!=filling_value).sum(axis=1).all())
-        
-        #The ground truth tensor created is of shape [batch,Max_sources,num_hyps,2], such that each of the 
-        # tensors gts[batch,i,num_hypothesis,output_dim] contains duplicates of target_position along the num_hypothesis
-        # dimension. Note that for some values of i, gts[batch,i,num_hypothesis,output_dim] may contain inactive sources, and therefore 
-        # gts[batch,i,j,2] will be filled with filling_value (defined above) for each j in the hypothesis dimension.
-        gts =  target_position.unsqueeze(2).repeat(1,1,num_hyps,1) #Shape [batch,Max_sources,num_hypothesis,output_dim]
-        
-        assert gts.shape==(batch,Max_sources,num_hyps,self.output_dim)
-        
-        #We duplicate the hyps_stacked with a new dimension of shape Max_sources
-        hyps_pred_stacked_duplicated = hyps_pred_stacked.unsqueeze(1).repeat(1,Max_sources,1,1) #Shape [batch,Max_sources,num_hypothesis,output_dim]
-
-        assert hyps_pred_stacked_duplicated.shape==(batch,Max_sources,num_hyps,self.output_dim)
-        
-        eps = 0.001
-        
-        if distance=='euclidean' :
-            #### With euclidean distance
-            diff = torch.square(hyps_pred_stacked_duplicated-gts) #Shape [batch,Max_sources,num_hypothesis,output_dim]
-            channels_sum = torch.sum(diff, dim=3) #Sum over the two dimensions (azimuth and elevation here). Shape [batch,Max_sources,num_hypothesis]
-            
-            assert channels_sum.shape == (batch,Max_sources,num_hyps)
-            assert (channels_sum>=0).all()
-            
-            dist_matrix = torch.sqrt(channels_sum + eps)  #Distance matrix [batch,Max_sources,num_hypothesis]
-            
-            assert dist_matrix.shape == (batch,Max_sources,num_hyps)
-
-        elif distance=='euclidean-squared' :
-            #### With euclidean distance
-            diff = torch.square(hyps_pred_stacked_duplicated-gts) #Shape [batch,Max_sources,num_hypothesis,output_dim]
-            dist_matrix = torch.sum(diff, dim=3) #Sum over the two dimensions (azimuth and elevation here). Shape [batch,Max_sources,num_hypothesis]
-            
-        sum_losses = torch.tensor(0.)
-
-        if mode == 'wta': 
-
-            if single_target_loss==True:
-                wta_dist_matrix, idx_selected = torch.min(dist_matrix, dim=2) #wta_dist_matrix of shape [batch,Max_sources] 
-                wta_dist_matrix, idx_source_selected = torch.min(wta_dist_matrix,dim=1) 
-                wta_dist_matrix = wta_dist_matrix.unsqueeze(-1) #[batch,1]
-                assert wta_dist_matrix.shape == (batch,1)
-                mask = wta_dist_matrix <= filling_value/2 #We create a mask for only selecting the actives sources, i.e. those which were not filled with fake values. 
-                wta_dist_matrix = wta_dist_matrix*mask #[batch,1], we select only the active sources.
-                count_non_zeros = torch.sum(mask!=0) #We count the number of actives sources for the computation of the mean (below).
-
-            else : 
-                wta_dist_matrix, idx_selected = torch.min(dist_matrix, dim=2) #wta_dist_matrix of shape [batch,Max_sources] 
-                mask = wta_dist_matrix <= filling_value/2 #We create a mask for only selecting the actives sources, i.e. those which were not filled with fake values. 
-                wta_dist_matrix = wta_dist_matrix*mask #[batch,Max_sources], we select only the active sources. 
-                count_non_zeros = torch.sum(mask!=0) #We count the number of actives sources for the computation of the mean (below). 
-            
-            if count_non_zeros>0 : 
-                loss = torch.sum(wta_dist_matrix)/count_non_zeros #We compute the mean of the diff. 
-            else :
-                loss = torch.tensor(0.)    
-            
-            sum_losses = torch.add(sum_losses, loss) 
-             
-        return sum_losses
-    
-class mhconfloss(_Loss):
-    """Class for rMCL loss (and variants).
+class WTALoss(_Loss):
+    """Class for WTA loss (and variants).
     """
     __constants__ = ['reduction']
 
@@ -169,7 +15,7 @@ class mhconfloss(_Loss):
                  conf_weight = 1,
                  output_dim=None,
                  temperature=None) -> None:
-        """Constructor for the rMCL loss.
+        """Constructor for the WTA loss.
 
         Args:
             reduction (str, optional): Type of reduction performed. Defaults to 'mean'.
@@ -177,9 +23,11 @@ class mhconfloss(_Loss):
             distance (str, optional): Underlying distance to use for the WTA computation. Defaults to 'euclidean'.
             epsilon (float, optional): Value of epsilon when applying the wta-relaxed variant. Defaults to 0.05.
             conf_weight (int, optional): Weight of the confidence loss (beta parameter). Defaults to 1.
+            output_dim (int, optional): Dimension of the output space. Defaults to None.
+            temperature (float, optional): Temperature parameter for the stable_awta variant. Defaults to None.
         """
 
-        super(mhconfloss, self).__init__(reduction)
+        super(WTALoss, self).__init__(reduction)
 
         assert output_dim != None, "The output dimension must be defined"
 
@@ -193,18 +41,18 @@ class mhconfloss(_Loss):
     def forward(self,
                 predictions: torch.Tensor,
                 targets: torch.Tensor) :
-        """Forward pass for the Multi-hypothesis rMCL Loss. 
+        """Forward pass for the WTA Loss. 
 
         Args:
-            predictions (torch.Tensor): Tensor of shape [batchxself.num_hypothesisxoutput_dim]
+            predictions (torch.Tensor): Tensor of shape [batch,self.num_hypothesis,output_dim]
             targets (torch.Tensor,torch.Tensor): #Shape [batch,Max_sources],[batch,Max_sources,output_dim]
 
         Returns:
             loss (torch.tensor)
         """
 
-        hyps_pred_stacked, conf_pred_stacked = predictions #Shape [batchxself.num_hypothesisxoutput_dim], [batchxself.num_hypothesisx1]
-        target_position, source_activity_target = targets #Shape [batch,Max_sources,output_dim],[batch,Max_sources,1]
+        hyps_pred_stacked, conf_pred_stacked = predictions # Shape [batch,self.num_hypothesis,output_dim], [batch,self.num_hypothesis,1]
+        target_position, source_activity_target = targets # Shape [batch,Max_sources,output_dim],[batch,Max_sources,1]
 
         losses = torch.tensor(0.)
                 
@@ -223,54 +71,39 @@ class mhconfloss(_Loss):
 
         return losses
     
-    def sampling_conf_loss_ambiguous_gts(self, hyps_pred_stacked, conf_pred_stacked, source_activity_target, target_position, mode='wta', distance='euclidean', epsilon=0.05, conf_weight = 1.):
+    def sampling_conf_loss_ambiguous_gts(self, hyps_pred_stacked, conf_pred_stacked, source_activity_target, target_position, mode, distance, epsilon, conf_weight):
         """Winner takes all loss computation and its variants.
 
         Args:
-            hyps_pred_stacked (torch.tensor): Input tensor of shape (batch,num_hyps,2)
-            source_activity_target torch.tensor): Input tensor of shape (batch,Max_sources)
-            conf_pred_stacked (torch.tensor): Input tensor of shape (batch,num_hyps,1)
-            target_position (torch.tensor): Input tensor of shape (batch,Max_sources,output_dim)
-            mode (str, optional): Variant of the classical WTA chosen. Defaults to 'epe'.
+            hyps_pred_stacked (torch.tensor): Input tensor of shape (batch,num_hyps,output_dim). Represents the predicted hypotheses $f_{\theta}^k(x), k \in {1, \dots, n}$.
+            source_activity_target (torch.tensor): Input tensor of shape (batch,Max_sources). Useful when multiple targets {y_i} are available for a given input x. When a single target is available, which corresponds to the usual setup, source_activity_target[:,0] is set to 1, and the other values are set to 0.
+            conf_pred_stacked (torch.tensor): Input tensor of shape (batch,num_hyps,1). Represents the predicted confidence scores $\gamma_{\theta}^k(x), k \in {1, \dots, n}$.
+            target_position (torch.tensor): Input tensor of shape (batch,Max_sources,output_dim). Represents the ground-truth positions of the targets, each of them of shape (output_dim).
+            mode (str, optional): Variant of the classical WTA chosen. Defaults to 'wta'.
             distance (str, optional): _description_. Defaults to 'euclidean'.
 
         Returns:
             loss (torch.tensor)
         """
-        
-        # hyps_pred_stacked of shape [batch,num_hyps,output_dim]
-        # source_activity_target of shape [batch,Max_sources]
-        # target_position of shape [batch,Max_sources,output_dim]
-        
-        filling_value = 1000 #Large number (on purpose) ; computational trick to ignore the "fake" ground truths.
+        filling_value = 100000 #Large number (on purpose) ; computational trick to ignore the "fake" ground truths.
         # whenever the sources are not active, as the source_activity is not to be deduced by the model is these settings. 
         num_hyps = hyps_pred_stacked.shape[1]
         batch = source_activity_target.shape[0]
         Max_sources = source_activity_target.shape[1]
 
-        #1st padding related to the inactive sources, not considered in the error calculation (with high error values)
+        #1st padding related to the inactive targets, not considered in the error calculation (with high error values)
         mask_inactive_sources = source_activity_target == 0
         mask_inactive_sources = mask_inactive_sources.expand_as(target_position)
         target_position[mask_inactive_sources] = filling_value #Shape [batch,Max_sources,output_dim]
         
-        #We can check whether the operation is performed correctly
-        # assert (source_activity_target.sum(axis=1).all()==(target_position[:,:,0]!=filling_value).sum(axis=1).all())
-        # assert (source_activity_target.sum(axis=1).all()==(target_position[:,:,1]!=filling_value).sum(axis=1).all())
-        
-        #The ground truth tensor created is of shape [batch,Max_sources,num_hyps,2], such that each of the 
+        #The ground truth tensor created is of shape [batch,Max_sources,num_hyps,output_dim], such that each of the 
         # tensors gts[batch,i,num_hypothesis,output_dim] contains duplicates of target_position along the num_hypothesis
-        # dimension. Note that for some values of i, gts[batch,i,num_hypothesis,output_dim] may contain inactive sources, and therefore 
+        # dimension. Note that for some values of i, gts[batch,i,num_hypothesis,output_dim] may contain inactive targets, and therefore 
         # gts[batch,i,j,2] will be filled with filling_value (defined above) for each j in the hypothesis dimension.
         gts =  target_position.unsqueeze(2).repeat(1,1,num_hyps,1) #Shape [batch,Max_sources,num_hypothesis,output_dim]
         
-        # assert gts.shape==(batch,Max_sources,num_hyps,self.output_dim)
-        
         #We duplicate the hyps_stacked with a new dimension of shape Max_sources
         hyps_pred_stacked_duplicated = hyps_pred_stacked.unsqueeze(1).repeat(1,Max_sources,1,1) #Shape [batch,Max_sources,num_hypothesis,output_dim]
-
-        # assert hyps_pred_stacked_duplicated.shape==(batch,Max_sources,num_hyps,2)
-        
-        eps = 0.001
 
         ### Management of the confidence part
         conf_pred_stacked = torch.squeeze(conf_pred_stacked,dim=-1) #(batch,num_hyps), predicted confidence scores for each hypothesis.
@@ -281,14 +114,7 @@ class mhconfloss(_Loss):
         if distance=='euclidean' :
             #### With euclidean distance
             diff = torch.square(hyps_pred_stacked_duplicated-gts) #Shape [batch,Max_sources,num_hyps,output_dim]
-            channels_sum = torch.sum(diff, dim=-1) #Sum over the two dimensions (azimuth and elevation here). Shape [batch,Max_sources,num_hypothesis]
-            
-            # assert channels_sum.shape == (batch,Max_sources,num_hyps)
-            # assert (channels_sum>=0).all()
-            
-            dist_matrix = torch.sqrt(channels_sum + eps)  #Distance matrix [batch,Max_sources,num_hyps]
-            
-            # assert dist_matrix.shape == (batch,Max_sources,num_hyps)
+            dist_matrix = torch.sqrt(torch.sum(diff, dim=-1))  #Distance matrix [batch,Max_sources,num_hyps]
 
         elif distance=='euclidean-squared' :
             diff = torch.square(hyps_pred_stacked_duplicated-gts) #Shape [batch,Max_sources,num_hyps,2]
@@ -301,8 +127,8 @@ class mhconfloss(_Loss):
             # We select the best hypothesis for each source
             wta_dist_matrix, idx_selected = torch.min(dist_matrix, dim=2) #wta_dist_matrix of shape [batch,Max_sources]
 
-            mask = wta_dist_matrix <= filling_value/2 #We create a mask of shape [batch,Max_sources] for only selecting the actives sources, i.e. those which were not filled with fake values. 
-            wta_dist_matrix = wta_dist_matrix*mask #[batch,Max_sources], we select only the active sources.
+            mask = wta_dist_matrix <= filling_value #We create a mask of shape [batch,Max_sources] for only selecting the active targets, i.e. those which were not filled with fake values. 
+            wta_dist_matrix = wta_dist_matrix*mask #[batch,Max_sources], we select only the active targets.
 
             # Create tensors to index batch and Max_sources dimensions
             batch_indices = torch.arange(batch, device=conf_pred_stacked.device)[:, None].expand(-1, Max_sources) # Shape (batch, Max_sources)
@@ -310,20 +136,16 @@ class mhconfloss(_Loss):
             # We set the confidences of the selected hypotheses.
             gt_conf_stacked_t[batch_indices[mask], idx_selected[mask]] = 1 #Shape (batch,num_hyps)
 
-            count_non_zeros = torch.sum(mask!=0) #We count the number of actives sources for the computation of the mean (below). 
+            count_non_zeros = torch.sum(mask!=0) #We count the number of active targets for the computation of the mean (below). 
             
             if count_non_zeros>0 : 
                 loss = torch.sum(wta_dist_matrix)/count_non_zeros #We compute the mean of the diff.
                 
                 selected_confidence_mask = gt_conf_stacked_t == 1 # (batch,num_hyps), this mask will refer to the ground truth of the confidence scores which
                 # will be selected for the scoring loss computation. At this point, only the positive hypothesis are selected.   
-                unselected_mask = ~selected_confidence_mask # (batch,num_hyps), mask for unselected hypotheses ; this mask will refer to the ground truth of the confidence scores which
-                # not are not selected at this point for the scoring loss computation.  
 
                 selected_confidence_mask = torch.ones_like(selected_confidence_mask).bool() # (batch,num_hyps)
 
-                # assert conf_pred_stacked.all()>0, "The original tensor was affected by the modification" # To check that the original tensor was not affected by the modification. 
-                
                 # Compute loss only for the selected elements
                 confidence_loss = torch.nn.functional.binary_cross_entropy(conf_pred_stacked[selected_confidence_mask], gt_conf_stacked_t[selected_confidence_mask])
                
@@ -343,9 +165,9 @@ class mhconfloss(_Loss):
             # assert wta_dist_matrix.shape == (batch,Max_sources)
             # assert idx_selected.shape == (batch,Max_sources)
             
-            mask = wta_dist_matrix <= filling_value/2 #We create a mask for only selecting the actives sources, i.e. those which were not filled with
-            wta_dist_matrix = wta_dist_matrix*mask #Shape [batch,Max_sources] ; we select only the active sources. 
-            count_non_zeros_1 = torch.sum(mask!=0) #We count the number of actives sources as a sum over the batch for the computation of the mean (below).
+            mask = wta_dist_matrix <= filling_value #We create a mask for only selecting the active targets, i.e. those which were not filled with
+            wta_dist_matrix = wta_dist_matrix*mask #Shape [batch,Max_sources] ; we select only the active targets. 
+            count_non_zeros_1 = torch.sum(mask!=0) #We count the number of active targets as a sum over the batch for the computation of the mean (below).
 
             ### Confidence management
             # Create tensors to index batch and Max_sources dimensions
@@ -360,13 +182,9 @@ class mhconfloss(_Loss):
                 
                 selected_confidence_mask = gt_conf_stacked_t == 1 # (batch,num_hyps), this mask will refer to the ground truth of the confidence scores which
                 # will be selected for the scoring loss computation. At this point, only the positive hypothesis are selected.   
-                unselected_mask = ~selected_confidence_mask # (batch,num_hyps), mask for unselected hypotheses ; this mask will refer to the ground truth of the confidence scores which
-                # not are not selected at this point for the scoring loss computation.  
 
                 selected_confidence_mask = torch.ones_like(selected_confidence_mask).bool() # (batch,num_hyps)
 
-                # assert conf_pred_stacked.all()>0, "The original tensor was affected by the modification" # To check that the original tensor was not affected by the modification. 
-  
                 # Compute loss only for the selected elements
                 confidence_loss = torch.nn.functional.binary_cross_entropy(conf_pred_stacked[selected_confidence_mask], gt_conf_stacked_t[selected_confidence_mask])
                
@@ -415,7 +233,6 @@ class mhconfloss(_Loss):
             sums_expanded = sums.expand_as(boltzmann_dist)  # shape [batch,Max_sources,num_hyps], expand the sums to the same shape as the original tensor
 
             # Create a mask where sums are non-zero
-            non_zero_mask = sums != 0
             non_zero_mask_expanded = sums_expanded != 0
             
             # normalize the dist
@@ -423,8 +240,8 @@ class mhconfloss(_Loss):
 
             awta_dist_matrix = boltzmann_dist*dist_matrix #Shape [batch,Max_sources,num_hyps]
             awta_dist_matrix = torch.sum(awta_dist_matrix, dim=-1) #Shape [batch,Max_sources]
-            mask = (source_activity_target == 1).squeeze(-1) #We create a mask of shape [batch,Max_sources] for only selecting the actives sources, i.e. those which were not filled with fake values. 
-            awta_dist_matrix = awta_dist_matrix*mask #[batch,Max_sources], we select only the active sources.
+            mask = (source_activity_target == 1).squeeze(-1) #We create a mask of shape [batch,Max_sources] for only selecting the active targets, i.e. those which were not filled with fake values. 
+            awta_dist_matrix = awta_dist_matrix*mask #[batch,Max_sources], we select only the active targets.
 
             # Create tensors to index batch and Max_sources dimensions
             batch_indices = torch.arange(batch, device=conf_pred_stacked.device)[:, None].expand(-1, Max_sources) # Shape (batch, Max_sources)
@@ -432,20 +249,16 @@ class mhconfloss(_Loss):
             # We set the confidences of the selected hypotheses.
             gt_conf_stacked_t[batch_indices[mask], idx_selected[mask]] = 1 #Shape (batch,num_hyps)
 
-            count_non_zeros = torch.sum(mask!=0) #We count the number of actives sources for the computation of the mean (below). 
+            count_non_zeros = torch.sum(mask!=0) #We count the number of active targets for the computation of the mean (below). 
             
             if count_non_zeros>0 : 
                 loss = torch.sum(awta_dist_matrix)/count_non_zeros #We compute the mean of the diff.
                 
                 selected_confidence_mask = gt_conf_stacked_t == 1 # (batch,num_hyps), this mask will refer to the ground truth of the confidence scores which
                 # will be selected for the scoring loss computation. At this point, only the positive hypothesis are selected.   
-                unselected_mask = ~selected_confidence_mask # (batch,num_hyps), mask for unselected hypotheses ; this mask will refer to the ground truth of the confidence scores which
-                # not are not selected at this point for the scoring loss computation.  
 
                 selected_confidence_mask = torch.ones_like(selected_confidence_mask).bool() # (batch,num_hyps)
 
-                # assert conf_pred_stacked.all()>0, "The original tensor was affected by the modification" # To check that the original tensor was not affected by the modification. 
-                
                 # Compute loss only for the selected elements
                 confidence_loss = torch.nn.functional.binary_cross_entropy(conf_pred_stacked[selected_confidence_mask], gt_conf_stacked_t[selected_confidence_mask])
                

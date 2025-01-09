@@ -50,7 +50,6 @@ def generate_plot_adapted(
     dataset_ms,
     dataset_ss,
     path_plot,
-    model_type="rMCL",
     list_x_values=[0.1, 0.6, 0.9],
     n_samples_gt_dist=5000,
     num_hypothesis=20,
@@ -110,86 +109,23 @@ def generate_plot_adapted(
         list_conf_min = []
         list_conf_max = []
 
-        if model_type == "rMCL":
-            # # Evaluate the models
-            hyps_rmcl, confs_rmcl = forward_single_sample_adapted(
-                model, test_loader, device="cpu"
-            )
-            confs_rmcl = confs_rmcl / np.sum(confs_rmcl, axis=1, keepdims=True)
-            confs_viz = confs_rmcl
-            cmap_norm = plt.Normalize(
-                vmin=np.min(confs_rmcl[index, :, :]),
-                vmax=np.max(confs_rmcl[index, :, :]),
-            )
-            colors = [
-                cmap(cmap_norm(confs_viz[index, k, 0])) for k in range(num_hypothesis)
-            ]
-            points = hyps_rmcl[index, :, :]
+        # Evaluate the models
+        hyps_rmcl, confs_rmcl = forward_single_sample_adapted(
+            model, test_loader, device="cpu"
+        )
+        confs_rmcl = confs_rmcl / np.sum(confs_rmcl, axis=1, keepdims=True)
+        confs_viz = confs_rmcl
+        cmap_norm = plt.Normalize(
+            vmin=np.min(confs_rmcl[index, :, :]),
+            vmax=np.max(confs_rmcl[index, :, :]),
+        )
+        colors = [
+            cmap(cmap_norm(confs_viz[index, k, 0])) for k in range(num_hypothesis)
+        ]
+        points = hyps_rmcl[index, :, :]
 
-            list_conf_min.append(np.min(confs_rmcl[index, :, :]))
-            list_conf_max.append(np.max(confs_rmcl[index, :, :]))
-
-        elif "MDN" in model_type:
-            mu_stacked, sigma_stacked, pi_stacked = forward_single_sample_adapted(
-                model, test_loader, device=device, gauss_output=True
-            )
-            num_modes = num_hypothesis
-            mu_stacked = np.array(mu_stacked.cpu())
-            sigma_stacked = np.array(sigma_stacked.cpu())
-            pi_stacked = np.array(pi_stacked.cpu())
-
-            cmap_norm = plt.Normalize(
-                vmin=np.min(pi_stacked[index, :, :]),
-                vmax=np.max(pi_stacked[index, :, :]),
-            )
-            colors = [
-                cmap(cmap_norm(pi_stacked[index, k, 0])) for k in range(num_modes)
-            ]
-            axes[i].scatter(
-                [mu_stacked[index, k, 0] for k in range(num_modes)],
-                [mu_stacked[index, k, 1] for k in range(num_modes)],
-                c=colors,
-                s=200,
-                edgecolors="black",
-            )
-
-            for mode in range(num_modes):
-
-                if log_var_pred is False:
-                    sigma = sigma_stacked[index, mode, 0]
-                else:
-                    sigma = np.exp(sigma_stacked[index, mode, 0] / 2)
-
-                x = mu_stacked[index, mode, 0]
-                y = mu_stacked[index, mode, 1]
-                sigma_x = sigma
-                sigma_y = sigma
-
-                # Generate points for the ellipse
-                theta = np.linspace(0, 2 * np.pi, 1000)  # 100 points around the ellipse
-                ellipse_x = x + sigma_x * np.cos(theta)
-                ellipse_y = y + sigma_y * np.sin(theta)
-
-                # Plotting
-                # print(colors_red)
-                axes[i].scatter(
-                    ellipse_x,
-                    ellipse_y,
-                    s=1,
-                    c="red",
-                    alpha=(pi_stacked[index, mode, 0] - np.min(pi_stacked[index, :, 0]))
-                    / (
-                        np.max(pi_stacked[index, :, 0])
-                        - np.min(pi_stacked[index, :, 0])
-                    ),
-                )
-                points = mu_stacked[index, :, :]
-                sm = plt.cm.ScalarMappable(
-                    cmap=cmap,
-                    norm=plt.Normalize(
-                        vmin=np.min(pi_stacked), vmax=np.max(pi_stacked)
-                    ),
-                )
+        list_conf_min.append(np.min(confs_rmcl[index, :, :]))
+        list_conf_max.append(np.max(confs_rmcl[index, :, :]))
 
         if plot_voronoi is True:
             # Compute the Voronoi tessellation

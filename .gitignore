@@ -186,3 +186,7 @@ mcl.gif
 cluster_scripts.sh
 synthetic_and_uci_datasets/scripts_uci_copy/
 synthetic_and_uci_datasets/scripts_uci_copy_2/
+synthetic_and_uci_datasets/scripts_uci_copy_3/
+synthetic_and_uci_datasets/scripts_uci/checkpoints_paths.json
+
+synthetic_and_uci_datasets/scripts_uci_eval/checkpoints_paths.json

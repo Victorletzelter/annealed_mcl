@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from src.utils.losses import mhloss, mhconfloss
+from src.utils.losses import WTALoss
 from .methodsLighting import methodsLighting
 
 class Rmcl(methodsLighting):
@@ -16,17 +16,42 @@ class Rmcl(methodsLighting):
         input_dim,
         output_dim
     ):
-        """Constructor for the multi-hypothesis network with confidence (rMCL).
-
+        """Constructor for the multi-hypothesis networks with score heads.
         Args:
+            hparams (dict): Dictionary of hyperparameters, contains:
+                name (str): Name of the model.
+                training_wta_mode (str): Mode of the WTA loss.
+                training_epsilon (float): Epsilon parameter for the WTA loss if the mode is "wta-relaxed".
+                training_conf_weight (float): Scoring weight parameter for the Score part of theWTA loss.
+                training_distance (str): Underlying distance type for the WTA loss.
+                optimizer (str): Optimizer type (e.g., Adam).
+                learning_rate (float): Learning rate.
+                denormalize_predictions (bool): Whether to denormalize the predictions.
+                compute_risk (bool): Whether to compute the risk.
+                compute_mse (bool): Whether to compute the MSE.
+                plot_mode (bool): Whether to perform a plot at the end of the training.
+                plot_mode_training (bool): Whether to perform a plot at each training epoch.
+                plot_training_frequency (int): Frequency of the plot training.
+                temperature_ini (float): Initial temperature.
+                scheduler_mode (str): Scheduler mode.
+                temperature_decay (float): Temperature decay if the scheduler mode is "exponential".
+                temperature_lim (float): Temperature limit, after which the scheduler is stopped.
+                wta_after_temperature_lim (bool): Whether to apply WTA after temperature limit.
+                annealed_epsilon (bool): Whether to annealed epsilon (if "wta-relaxed" mode is used).
+                epsilon_ini (float): Initial epsilon.
+                epsilon_decay (float): Epsilon decay.
+                compute_risk_val (bool): Whether to compute the risk for the validation set.
             num_hypothesis (int): Number of output hypotheses.
+            restrict_to_square (bool): Whether to restrict the output to the square [-1,1]^2.
+            hidden_layers (list): List of hidden layers.
+            input_dim (int): Dimension of the input space.
+            output_dim (int): Dimension of the output space.
         """
         self.output_dim = output_dim
         self.input_dim = input_dim
         
         methodsLighting.__init__(self, hparams)
 
-        self.name = "rmcl"
         self._hparams = hparams
         self.num_hypothesis = num_hypothesis
         self.restrict_to_square = restrict_to_square
@@ -76,11 +101,11 @@ class Rmcl(methodsLighting):
             self.final_conf_layers[f"hyp_{k}"] = nn.Linear(last_hidden_size, 1)
 
     def forward(self, x):
-        """For pass of the multi-hypothesis network with confidence (rMCL).
+        """Forward pass of the multi-hypothesis network with score heads.
 
         Returns:
-            hyp_stacked (torch.Tensor): Stacked hypotheses. Shape [batchxself.num_hypothesisxoutput_dim]
-            confs (torch.Tensor): Confidence of each hypothesis. Shape [batchxself.num_hypothesisx1]
+            hyp_stacked (torch.Tensor): Stacked hypotheses. Shape [batch,self.num_hypothesis,output_dim]
+            confs (torch.Tensor): Confidence of each hypothesis. Shape [batch,self.num_hypothesis,1]
         """
         # Pass input through each layer
         for layer, activation in zip(self.layers, self.activation_functions):
@@ -93,49 +118,26 @@ class Rmcl(methodsLighting):
             if self.restrict_to_square:
                 outputs_hyps.append(
                     F.tanh(self.final_hyp_layers[f"hyp_{k}"](x))
-                )  # Size [batchxoutput_dim]
+                )  # Size [batch,output_dim]
             else:
                 outputs_hyps.append(
                     (self.final_hyp_layers[f"hyp_{k}"](x))
-                )  # Size [batchxoutput_dim]
+                )  # Size [batch,output_dim]
             confidences.append(
                 F.sigmoid(self.final_conf_layers[f"hyp_{k}"](x))
-            )  # Size [batchx1])
+            )  # Size [batch,1])
 
         hyp_stacked = torch.stack(
             outputs_hyps, dim=-2
-        )  # Shape [batchxself.num_hypothesisxoutput_dim]
+        )  # Shape [batch,self.num_hypothesis,output_dim]
         assert hyp_stacked.shape == (x.shape[0], self.num_hypothesis, self.output_dim)
-        conf_stacked = torch.stack(confidences, dim=-2)  # [batchxself.num_hypothesisx1]
+        conf_stacked = torch.stack(confidences, dim=-2)  # [batch,self.num_hypothesis,1]
         assert conf_stacked.shape == (x.shape[0], self.num_hypothesis, 1)
 
         return hyp_stacked, conf_stacked
 
-    def wta_risk(self, test_loader, device):
-
-        risk_value = torch.tensor(0.0, device=device)
-
-        criterion = mhloss(mode="wta", distance="euclidean-squared")
-
-        for _, data in enumerate(test_loader):
-            # Move the input and target tensors to the device
-
-            data_t = data[0].to(device)
-            data_target_position = data[1].to(device)
-            data_source_activity_target = data[2].to(device)
-
-            # Forward pass
-            outputs = self(data_t.float().reshape(-1, 1))
-
-            # Compute the loss
-            risk_value += criterion(
-                outputs, (data_target_position, data_source_activity_target)
-            )
-
-        return risk_value / len(test_loader)
-
     def loss(self):
-        return mhconfloss(
+        return WTALoss(
             mode=self._hparams["training_wta_mode"],
             epsilon=self._hparams["training_epsilon"],
             distance=self._hparams["training_distance"],
@@ -146,18 +148,17 @@ class Rmcl(methodsLighting):
     
     def prepare_predictions_mse(self, predictions) :
 
-        hyps = predictions[0] # shape [batchself.num_hypothesisxoutput_dim]
-        confs = predictions[1] / predictions[1].sum(dim=-2, keepdim=True) # shape [batchself.num_hypothesisx1]
+        hyps = predictions[0] # shape [batch,self.num_hypothesis,output_dim]
+        confs = predictions[1] / predictions[1].sum(dim=-2, keepdim=True) # shape [batch,self.num_hypothesis,1]
 
         # Return the ponderated mean of the hypotheses
         return (hyps * confs).sum(dim=-2) # shape [batchxoutput_dim]
 
     def denormalize_predictions(self, predictions, mean_scaler, std_scaler) : 
         # mean and std scalers are the ones used for the target variable
-        # shape [batchself.num_hypothesisxoutput_dim], [batchxself.num_hypothesisx1]
+        # shape [batch,self.num_hypothesis,output_dim], [batch,self.num_hypothesis,1]
         hyps = predictions[0]
         confs = predictions[1]
-
         hyps = hyps * std_scaler + mean_scaler
 
         return (hyps, confs)
@@ -165,9 +166,7 @@ class Rmcl(methodsLighting):
     def denormalize_targets(self ,targets, mean_scaler, std_scaler) :
         # targets[0] of shape [batch,Max_sources,output_dim]
         # targets[1] of shape [batch,Max_sources,1]
-
         target_position = targets[0]
-
         target_position = target_position * std_scaler + mean_scaler
 
         return target_position, targets[1]
