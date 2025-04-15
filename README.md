@@ -148,12 +148,14 @@ The code to train source separation models on the WSJ0-mix dataset is available 
 - `train.py`: code to launch to train the systems. It manages the configurations and the exeriments saving.
 - `utils.py`: various utilitaries
 - `config_dprnn.py`: configuration file for DPRNN with each configuration for the experiments conducted in the paper.
-- `config_sudo.py`: same with SudoRm-Rf 
+- `config_sudo.py`: same with SudoRm-Rf
+- `update_metadata.py`: script for updating the path in the metadata of the WSJ0-mix dataset.
 
 ### Environment
 
 To install the dependencies, please use the following commands:
 ```
+cd source_separation
 conda create -n annealed_mcl python=3.8
 conda activate annealed_mcl
 conda install pytorch==2.0.0 pytorch-cuda==11.7 -c pytorch -c nvidia -y
