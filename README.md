@@ -162,7 +162,7 @@ pip install -r requirements.txt
 
 ### Data preparation
 
-Metadata for the WJS0-mix dataset are provided. In order to reproduce our experiments, download the wsj0-mix dataset from the [official WSJ0 website](https://catalog.ldc.upenn.edu/LDC93S6A). Once you have access to the WSJ0 data, you can generate the mixtures using the tools provided in [this repository](https://github.com/kaituoxu/Conv-TasNet) (see the "Usage" section in the README). We provide the metadata for mixtures from 2 to 5 speakers at the following [url](https://drive.google.com/drive/folders/1i4S17O5h-k5YNCtoOj53osuzgDNYH6pN?usp=sharing). Download the `data` folder from this url and place in the `./source_separation` folder. 
+Metadata for the WJS0-mix dataset is provided. To reproduce our experiments, download the wsj0-mix dataset from the [official WSJ0 website](https://catalog.ldc.upenn.edu/LDC93S6A). Once you have access to the WSJ0 data, you can generate the mixtures using the tools provided in [this repository](https://github.com/kaituoxu/Conv-TasNet) (see the "Usage" section in the README). We provide the metadata for mixtures from 2 to 5 speakers at the following [url](https://drive.google.com/drive/folders/1i4S17O5h-k5YNCtoOj53osuzgDNYH6pN?usp=sharing). Download the `data` folder from this url and place it in the `./source_separation` folder. 
 
 Finally, update the downloaded metadata audio path to specify the root folder of the WSJ0-mix dataset with the following command:
 ```
@@ -174,22 +174,6 @@ python update_metadata.py /wsj0-mix/root/path
 To train a model:
 ```
 python train.py --conf_id 001 --backbone dprnn
-```
-
-### Main dependencies
-
-```
-# Name                    Version      
-asteroid                  0.6.1.dev0               
-numpy                     1.24.4                   
-pandas                    2.0.3                   
-pot                       0.9.3                   
-python                    3.8.18              
-pytorch-lightning         1.7.7                    
-scikit-learn              1.3.2                    
-scipy                     1.10.1                   
-torch                     1.13.1                   
-torchaudio                0.13.1                   
 ```
 
 ### Contribution
