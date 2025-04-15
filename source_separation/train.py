@@ -48,7 +48,7 @@ parser.add_argument("--conf_id", default="001",
 parser.add_argument("--debug", type=bool, default=False,
           help="If true save to specific directory")
 parser.add_argument("--ckpt",default=None,type=str,help="Path to the checkpoint from which to start the training ('last' or specific path)")
-parser.add_argument("--backbone", default="sudo", choices=["sudo","dprnn"],type=str)
+parser.add_argument("--backbone", default="dprnn", choices=["sudo","dprnn"],type=str)
 def main(conf):
 
   conf_id = conf["conf_id"]

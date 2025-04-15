@@ -150,6 +150,25 @@ The code to train source separation models on the WSJ0-mix dataset is available 
 - `config_dprnn.py`: configuration file for DPRNN with each configuration for the experiments conducted in the paper.
 - `config_sudo.py`: same with SudoRm-Rf 
 
+### Environment
+
+To install the dependencies, please use the following commands:
+```
+conda create -n annealed_mcl python=3.8
+conda activate annealed_mcl
+conda install pytorch==2.0.0 pytorch-cuda==11.7 -c pytorch -c nvidia -y
+pip install -r requirements.txt
+```
+
+### Data preparation
+
+Metadata for the WJS0-mix dataset are provided. In order to reproduce our experiments, download the wsj0-mix dataset from the [official WSJ0 website](https://catalog.ldc.upenn.edu/LDC93S6A). Once you have access to the WSJ0 data, you can generate the mixtures using the tools provided in [this repository](https://github.com/kaituoxu/Conv-TasNet) (see the "Usage" section in the README). We provide the metadata for mixtures from 2 to 5 speakers at the following [url](https://drive.google.com/drive/folders/1i4S17O5h-k5YNCtoOj53osuzgDNYH6pN?usp=sharing). Download the `data` folder from this url and place in the `./source_separation` folder. 
+
+Finally, update the downloaded metadata audio path to specify the root folder of the WSJ0-mix dataset with the following command:
+```
+python update_metadata.py /wsj0-mix/root/path
+```
+
 ### Training model with a given configuration
 
 To train a model:
