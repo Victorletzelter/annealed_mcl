@@ -15,11 +15,11 @@ EXP = "001"
 
 cluster = socket.gethostname()
 slurm = "SLURM_JOB_ID" in os.environ
-log_dir_path = "/path/to/log/dir/"
+
+# place to save the logs (tb logs)
+log_dir_path = "./log"
 # data directory with the CSV files to generate the mixtures
-data_dir_path = "/path/to/data/dir/"
-#if "audible01" in cluster:
-#  data_dir_path = "/data/"
+data_dir_path = "./data"
 
 # Data setup as a function of number of sources and sample rate
 n_src=2 #maximum number of sources to separate. If n_src=3 it will train on wsj0{2-3}mix
