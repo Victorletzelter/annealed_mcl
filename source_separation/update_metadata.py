@@ -1,3 +1,8 @@
+"""
+This script can be used to update the path in the metadata of the WSJ0-mix dataset.
+It can be used as follows:
+python update_metadata.py /wsj0-mix/root/path
+"""
 import pandas as pd 
 import argparse
 
