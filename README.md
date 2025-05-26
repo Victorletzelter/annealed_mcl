@@ -98,7 +98,7 @@ The benchmark follows the experimental protocol of previous works [A,B].
 
 **Evaluation pipeline**:
 
-- Download checkpoints from this [drive](https://drive.google.com/file/d/1eH9yV5Lex_vKJzaEOQx-mf_UGTcGLTNx/view?usp=drive_link).
+- Download checkpoints from this [drive](https://drive.google.com/drive/folders/1T6E17c16DubH8A4eqKc3tOXDfCxiLtwi?usp=sharing).
 - Place the checkpoints folder (named `checkpoints_uci_amcl`) in the synthetic_and_uci_datasets/ folder.
 - Run the python scriptin  `synthetic_and_uci_datasets/scripts_uci_eval/extract_ckpt_json.py` to extract the checkpoints paths in a json file with ```python synthetic_and_uci_datasets/scripts_uci_eval/extract_ckpt_json.py```
 - Run the following commands to train and evaluate the models:
